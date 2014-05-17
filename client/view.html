@@ -1,0 +1,38 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="test.css" />
+</head>
+    <body>
+        <div id="view"></div>
+        <div class="overlay">
+            <ul>
+                <li id="highlight" class="tool">Highlight</li>
+                <li id="terraform" class="tool">Terraform</li>
+                <li id="rotate_right" class="tool disabled">Rotate Right</li>
+                <li id="rotate_left" class="tool disabled">Rotate Left</li>
+            </ul>
+        </div>
+
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-throttle-debounce/1.1/jquery.ba-throttle-debounce.min.js"></script>
+        <script src="js/Three.js"></script>
+        <script src="js/OrbitControls.js"></script>
+        <script src="js/WindowResize.js"></script>
+        <script src="js/World.js"></script> 
+        
+        <script src="js/Renderer.js"></script>
+        <script src="js/UI.js"></script> 
+        <script>
+        
+        
+var world = new World();
+var renderer = new Renderer(world);
+var UI = new UI($, world, renderer);
+
+
+
+
+        </script>
+    </body>
+</html>

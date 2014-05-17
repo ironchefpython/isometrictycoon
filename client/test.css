@@ -1,0 +1,36 @@
+* { 
+    margin: 0; 
+    padding: 0; 
+}
+
+#world {
+        background-color: #808080;
+}
+
+.overlay { 
+    position: fixed; 
+    z-index: 99992;
+    top: 20px; 
+    left: 20px; 
+}
+
+li { 
+    margin: 10px; 
+    padding : 2px 10px 2px 10px; 
+    cursor: pointer; 
+    color: #bdf; 
+    border-width: 1;
+    border-style:solid;
+    border-color: #000000;
+    background-color: #9090FF;
+    list-style-type: none;
+}
+
+li.selected {
+    background-color: #0000B0;
+}
+
+li.disabled {
+    background-color: #808080;
+    color: #606060; 
+}
