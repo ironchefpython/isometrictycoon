@@ -108,20 +108,23 @@ var WorldRenderer = function(world) {
         Array.prototype.push.apply(border.vertices, tileMesh.geometry.vertices);
         var lineMaterial = new THREE.LineBasicMaterial({color: 0xFFFFFF});
         var borderMesh = new THREE.Line(border, lineMaterial);
-        borderMesh.position = new THREE.Vector3(tile.x, tile.y, 0.001);
+        borderMesh.renderDepth = 1;
+        borderMesh.position = new THREE.Vector3(tile.x, tile.y, 0);
         $this.grid.add(borderMesh);
         
     });
     
     
-    this.pointHighlight = (function() {
-        var material = new THREE.MeshBasicMaterial( { vertexColors: THREE.FaceColors } );
-        var geometry = new THREE.CircleGeometry( 0.1, 32 );
-        return new THREE.Mesh(geometry, material);
-    })();
-    console.log(this.pointHighlight);
+    var pointGeometry = new THREE.CircleGeometry( 0.16, 32 );
+    pointGeometry.faces.forEach(function(face) {
+            face.color = new THREE.Color( 0xff00000 );
+    });
+    var pointMaterial = new THREE.MeshBasicMaterial( { vertexColors: THREE.FaceColors } );
+    this.pointHighlight = new THREE.Mesh(pointGeometry, pointMaterial);
+    this.pointHighlight.visible = false;
+    this.pointHighlight.renderDepth = 2;
     this.scene.add(this.pointHighlight);
-    
+
 };
 
 WorldRenderer.prototype.startRender = function() {
@@ -269,12 +272,26 @@ var setGroundColor = function(ground, color) {
 };
 
 WorldRenderer.prototype.highlightTile = function(tile) {
-    setGroundColor(tile, new THREE.Color(0x32cd32));
+    setGroundColor(tile.geometry, new THREE.Color(0x32cd32));
 };
 
 WorldRenderer.prototype.subdueTile = function(tile) {
-    setGroundColor(tile, new THREE.Color(0x228b22));
+    setGroundColor(tile.geometry, new THREE.Color(0x228b22));
 };
+
+
+
+WorldRenderer.prototype.highlightPoint = function(point) {
+    this.pointHighlight.position = point;
+    this.pointHighlight.visible = true;
+};
+
+WorldRenderer.prototype.subduePoint = function(point) {
+    this.pointHighlight.visible = false;
+};
+
+
+
 
 // var highlighter = (function() {
 //     var last;
@@ -296,29 +313,44 @@ WorldRenderer.prototype.subdueTile = function(tile) {
 
 
 
-WorldRenderer.prototype.setPointerMode = function(mode) {
-};
 
-Viewport.prototype.update = function() {
-    var vector = new THREE.Vector3(
-        this.pointer.x,
-        this.pointer.y,
-        1 );
-    var ray = this.projector.pickingRay( vector, this.camera );
-    var intersects = ray.intersectObject( this.worldRenderer.surface, true );
-    var tile = intersects.length > 0 ? intersects[0].object : undefined;
-    if (this.pointer.tile != tile) {
-        if (this.pointer.tile) {
-            $(this.element).trigger("tileout", this.pointer.tile);
+Viewport.prototype.update = (function() {
+    var NULL_POINT = new THREE.Vector3(NaN, NaN, NaN);
+    var lasttile = null;
+    var lastpoint = NULL_POINT;
+    
+    return function() {
+        var vector = new THREE.Vector3(
+            this.pointer.x,
+            this.pointer.y,
+            1 );
+        var ray = this.projector.pickingRay( vector, this.camera );
+        var intersects = ray.intersectObject( this.worldRenderer.surface, true );
+        var tile = intersects.length > 0 ? intersects[0].object : undefined;
+        if (lasttile != tile) {
+            if (lasttile) {
+                $(this.element).trigger("tileout", lasttile);
+            }
+            if (tile) {
+                $(this.element).trigger("tileover", tile);
+            }
+            lasttile = tile;
+    
         }
-        if (tile) {
-            $(this.element).trigger("tileover", tile);
+        var point = intersects.length > 0 ? intersects[0].point : NULL_POINT;
+        point.round();
+        if (!lastpoint.equals(point)) {
+            if (lastpoint !== NULL_POINT) {
+                $(this.element).trigger("pointout", this.pointer.point);
+            }
+            if (point !== NULL_POINT) {
+                $(this.element).trigger("pointover", point);
+            }
+            lastpoint = point;
         }
-        this.pointer.tile = tile;
-
-    }
+    };
 //    highlighter(this.pointer.tile && this.pointer.tile.geometry);
-};
+})();
 
 
 

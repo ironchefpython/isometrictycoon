@@ -4,26 +4,66 @@
     else { context.UI = factory(); }
 }(this, function () {
 
+var NOP = function() {};
 
-
-var highlightAction = function(renderer, viewport) {
-    var tile;
-    return {
-        activate: undefined,
-        deactivate:  function() {
-            renderer.subdueTile(tile);
-        }, 
-        mousedown: undefined,
-        mouseup: undefined,
-        mousemove: undefined,
-        tileover: function(e, tile) {
-            renderer.highlightTile(tile.geometry);
-        },
-        tileout: function(e, tile) {
-            renderer.subdueTile(tile.geometry);
+$('li#highlight').data("action", function(renderer, viewport) {
+    var lasttile = null;
+    var subdue = function() {
+        if (lasttile) {
+            renderer.subdueTile(lasttile);
+            lasttile = null;
         }
     };
-};
+    return {
+        activate: NOP,
+        deactivate: subdue, 
+        mousedown: NOP,
+        mouseup: NOP,
+        mousemove: NOP,
+        tileover: function(e, tile) {
+            renderer.highlightTile(tile);
+            lasttile = tile;
+        },
+        tileout: subdue,
+        pointover: NOP,
+        pointout: NOP
+    };
+});
+
+$('li#terraform').data("action", function(renderer, viewport) {
+    var lastpoint = null;
+    var dragging = false;
+    var endDrag = function() {
+        if (dragging) {
+            dragging = false;
+        }
+        if (lastpoint) {
+            renderer.subduePoint(lastpoint);
+            lastpoint= false;
+        }
+    };
+    return {
+        activate: NOP,
+        deactivate:  endDrag, 
+        mousedown: NOP,
+        mouseup: NOP,
+        mousemove: NOP,
+        tileover: NOP,
+        tileout: NOP,
+        pointover:  function(e, point) {
+            renderer.highlightPoint(point);
+            lastpoint = point;
+        },
+        pointout: function(e, point) {
+            if (!dragging && lastpoint) {
+                renderer.subduePoint(lastpoint);
+                lastpoint = null;
+            }
+        }
+    };
+});
+
+
 
     // $('li#terraform').data("action", new ActionObj({
     //     activate: function() {
@@ -57,28 +97,23 @@ var UI = function($, world, renderer) {
     world.render();
     renderer.startRender();
     
-    $("#view").on("tileover", function(e, tile) {
-        console.log(tile);
-        renderer.highlightTile(tile.geometry);
-    });
-    
-    $("#view").on("tileout", function(e, tile) {
-        renderer.subdueTile(tile.geometry);
-    });
-    
-    $('li#highlight').data("action", highlightAction(renderer, viewport));
-
     var selectedTool;
+    var action;
+
     $('li.tool').on("click", function(event) {
         if (selectedTool) {
-            selectedTool.removeClass("selected").data("action").deactivate();
+            action.deactivate();
+            selectedTool.removeClass("selected");
         }
+        
         selectedTool = $(this).addClass("selected");
-        action = selectedTool.data("action");
-        if (action.activate) {
-            action.activate();
-        }
+        action = selectedTool.data("action")(renderer, viewport);
+        action.activate();
+        
+        console.log(action);
     });
+    $('li#highlight').click();
+
 
     $("#view").on("mousedown", function(event) {
         action.mousedown(event);
@@ -95,11 +130,15 @@ var UI = function($, world, renderer) {
     $("#view").on("tileout", function(event, tile) {
         action.tileout(event, tile);
     });
-
     
-    $('li#highlight').click();
+    $("#view").on("pointover", function(event, point) {
+        action.pointover(event, point);
+    });
 
-    var action;
+    $("#view").on("pointout", function(event, point) {
+        action.pointout(event, point);
+    });
+    
     
     
 };
